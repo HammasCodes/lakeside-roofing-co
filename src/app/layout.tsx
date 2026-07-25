@@ -14,9 +14,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Custom Home Builder",
+  title: "Lakeside Roofing Co. | DFW Roofing Experts",
   description:
-    "A premium custom home building studio — crafted homes, guided from concept to completion.",
+    "Trusted roofing experts serving the Dallas-Fort Worth Metroplex. Personal, reliable, professional roof replacement, storm damage repair, and gutter installation.",
 };
 
 export default function RootLayout({

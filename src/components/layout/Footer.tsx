@@ -1,3 +1,5 @@
+import Reveal from "@/components/ui/Reveal";
+
 const quickLinks = [
   { label: "Process", href: "#process" },
   { label: "Portfolio", href: "#portfolio" },
@@ -8,12 +10,14 @@ export default function Footer() {
   return (
     <footer className="bg-ink">
       <div className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-3 md:gap-8">
+        <Reveal className="grid grid-cols-1 gap-12 md:grid-cols-3 md:gap-8">
           <div>
-            <p className="font-display text-xl text-cream">Marlowe Homes</p>
+            <p className="font-display text-xl text-cream">
+              Lakeside Roofing Co.
+            </p>
             <p className="mt-4 max-w-xs font-sans text-sm leading-relaxed text-cream/60">
-              Custom luxury homes crafted with uncompromising attention to
-              detail, from first sketch to final walkthrough.
+              Trusted roofing experts serving the Dallas-Fort Worth
+              Metroplex. Personal. Reliable. Professional.
             </p>
           </div>
 
@@ -40,19 +44,22 @@ export default function Footer() {
               Contact
             </p>
             <ul className="mt-4 flex flex-col gap-3 font-sans text-sm text-cream/70">
-              <li>(512) 555-0148</li>
-              <li>hello@marlowehomes.com</li>
-              <li>Serving Austin &amp; the Texas Hill Country</li>
+              <li>(972) 365-1216</li>
+              <li>jason@lakesideroofco.com</li>
+              <li>
+                Serving the DFW Metroplex (Dallas, Richardson, Plano,
+                Frisco, McKinney)
+              </li>
             </ul>
           </div>
-        </div>
+        </Reveal>
 
-        <div className="mt-16 border-t border-cream/10 pt-8">
+        <Reveal className="mt-16 border-t border-cream/10 pt-8">
           <p className="font-sans text-xs text-cream/40">
-            &copy; {new Date().getFullYear()} Marlowe Homes. All rights
-            reserved.
+            &copy; {new Date().getFullYear()} Lakeside Roofing Co. All
+            rights reserved.
           </p>
-        </div>
+        </Reveal>
       </div>
     </footer>
   );

@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# raw, uncompressed source video (kept locally, never committed)
+/raw-assets
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

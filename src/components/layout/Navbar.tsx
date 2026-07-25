@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 const navLinks = [
   { label: "Process", href: "#process" },
@@ -30,33 +31,42 @@ export default function Navbar() {
       }`}
     >
       <nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-10">
-        <a
+        <motion.a
           href="#"
+          whileHover={{ scale: 1.02 }}
+          transition={{ duration: 0.2 }}
           className={`font-display text-xl tracking-wide transition-colors ${
             solid ? "text-ink" : "text-white"
           }`}
         >
-          Marlowe Homes
-        </a>
+          Lakeside Roofing Co.
+        </motion.a>
 
         <div className="hidden items-center gap-10 md:flex">
           {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
-              className={`font-sans text-sm tracking-wide transition-colors ${
+              className={`group relative font-sans text-sm tracking-wide transition-colors ${
                 solid ? "text-ink-soft hover:text-ink" : "text-white/85 hover:text-white"
               }`}
             >
               {link.label}
+              <span
+                className={`absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100 ${
+                  solid ? "bg-ink" : "bg-white"
+                }`}
+              />
             </a>
           ))}
-          <a
+          <motion.a
             href="#contact"
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
             className="rounded-full bg-accent px-6 py-2.5 font-sans text-sm font-medium text-white transition-colors hover:bg-accent-dark"
           >
-            Book a Consultation
-          </a>
+            Schedule Inspection
+          </motion.a>
         </div>
 
         <button
@@ -67,41 +77,49 @@ export default function Navbar() {
           className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 md:hidden"
         >
           <span
-            className={`h-px w-6 transition-transform ${
+            className={`h-px w-6 transition-transform duration-300 ${
               solid ? "bg-ink" : "bg-white"
             } ${menuOpen ? "translate-y-[3.5px] rotate-45" : ""}`}
           />
           <span
-            className={`h-px w-6 transition-transform ${
+            className={`h-px w-6 transition-transform duration-300 ${
               solid ? "bg-ink" : "bg-white"
             } ${menuOpen ? "-translate-y-[3.5px] -rotate-45" : ""}`}
           />
         </button>
       </nav>
 
-      {menuOpen && (
-        <div className="border-t border-line bg-cream px-6 pb-8 pt-2 md:hidden">
-          <div className="flex flex-col gap-5">
-            {navLinks.map((link) => (
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] as const }}
+            className="overflow-hidden border-t border-line bg-cream md:hidden"
+          >
+            <div className="flex flex-col gap-5 px-6 pb-8 pt-6">
+              {navLinks.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="font-sans text-base text-ink-soft transition-colors hover:text-ink"
+                >
+                  {link.label}
+                </a>
+              ))}
               <a
-                key={link.href}
-                href={link.href}
+                href="#contact"
                 onClick={() => setMenuOpen(false)}
-                className="font-sans text-base text-ink-soft transition-colors hover:text-ink"
+                className="rounded-full bg-accent px-6 py-3 text-center font-sans text-sm font-medium text-white transition-colors hover:bg-accent-dark"
               >
-                {link.label}
+                Schedule Inspection
               </a>
-            ))}
-            <a
-              href="#contact"
-              onClick={() => setMenuOpen(false)}
-              className="rounded-full bg-accent px-6 py-3 text-center font-sans text-sm font-medium text-white transition-colors hover:bg-accent-dark"
-            >
-              Book a Consultation
-            </a>
-          </div>
-        </div>
-      )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
