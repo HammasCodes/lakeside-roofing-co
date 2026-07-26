@@ -1,4 +1,10 @@
-import Reveal from "@/components/ui/Reveal";
+"use client";
+
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const steps = [
   {
@@ -24,10 +30,48 @@ const steps = [
 ];
 
 export default function Process() {
+  const root = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
+
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        gsap
+          .timeline({
+            scrollTrigger: {
+              trigger: root.current,
+              start: "top 75%",
+              once: true,
+            },
+          })
+          .from(".process-header", {
+            y: 28,
+            opacity: 0,
+            duration: 0.8,
+            ease: "power4.out",
+          })
+          .from(
+            ".process-step",
+            {
+              y: 32,
+              opacity: 0,
+              duration: 0.8,
+              ease: "power4.out",
+              stagger: 0.12,
+            },
+            "-=0.4"
+          );
+      });
+    }, root);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section id="process" className="bg-cream py-24 md:py-32">
+    <section id="process" ref={root} className="bg-cream py-24 md:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
-        <Reveal className="mx-auto max-w-2xl text-center">
+        <div className="process-header mx-auto max-w-2xl text-center">
           <h2 className="font-display text-4xl text-ink sm:text-5xl">
             How It Works
           </h2>
@@ -35,14 +79,13 @@ export default function Process() {
             A straightforward, transparent process from first inspection to
             final walkthrough.
           </p>
-        </Reveal>
+        </div>
 
         <div className="mt-16 grid grid-cols-1 divide-y divide-line md:mt-24 md:grid-cols-4 md:divide-y-0 md:divide-x">
-          {steps.map((step, i) => (
-            <Reveal
+          {steps.map((step) => (
+            <div
               key={step.number}
-              delay={i * 0.1}
-              className="group px-0 py-10 first:pt-0 last:pb-0 md:px-8 md:py-0 md:first:pl-0 md:last:pr-0"
+              className="process-step group px-0 py-10 first:pt-0 last:pb-0 md:px-8 md:py-0 md:first:pl-0 md:last:pr-0"
             >
               <span className="font-display text-5xl text-ink-soft/70 transition-colors duration-300 group-hover:text-accent">
                 {step.number}
@@ -53,7 +96,7 @@ export default function Process() {
               <p className="mt-3 font-sans text-sm leading-relaxed text-ink-soft sm:text-base">
                 {step.body}
               </p>
-            </Reveal>
+            </div>
           ))}
         </div>
       </div>

@@ -1,5 +1,11 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import BeforeAfterSlider from "@/components/ui/BeforeAfterSlider";
-import Reveal from "@/components/ui/Reveal";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const projects = [
   {
@@ -32,21 +38,59 @@ const projects = [
 ];
 
 export default function Portfolio() {
+  const root = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
+
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        gsap
+          .timeline({
+            scrollTrigger: {
+              trigger: root.current,
+              start: "top 75%",
+              once: true,
+            },
+          })
+          .from(".portfolio-header", {
+            y: 28,
+            opacity: 0,
+            duration: 0.8,
+            ease: "power4.out",
+          })
+          .from(
+            ".portfolio-card",
+            {
+              y: 40,
+              opacity: 0,
+              duration: 0.9,
+              ease: "power4.out",
+              stagger: 0.15,
+            },
+            "-=0.4"
+          );
+      });
+    }, root);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section id="portfolio" className="bg-cream py-24 md:py-32">
+    <section id="portfolio" ref={root} className="bg-cream py-24 md:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
-        <Reveal className="mx-auto max-w-2xl text-center">
+        <div className="portfolio-header mx-auto max-w-2xl text-center">
           <h2 className="font-display text-4xl text-ink sm:text-5xl">
             Featured Work
           </h2>
           <p className="mt-5 font-sans text-base text-ink-soft sm:text-lg">
             Drag the slider to see the difference our work makes.
           </p>
-        </Reveal>
+        </div>
 
         <div className="mt-16 grid grid-cols-1 gap-10 md:mt-24 md:grid-cols-3 md:gap-10">
           {projects.map((project, i) => (
-            <Reveal key={project.label} delay={i * 0.1}>
+            <div key={project.label} className="portfolio-card">
               <BeforeAfterSlider
                 label={project.label}
                 beforeSrc={project.beforeSrc}
@@ -55,7 +99,7 @@ export default function Portfolio() {
                 afterAlt={project.afterAlt}
                 hintDelay={i * 250}
               />
-            </Reveal>
+            </div>
           ))}
         </div>
       </div>
