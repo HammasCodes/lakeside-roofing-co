@@ -6,7 +6,6 @@
   "installCommand": "npm ci",
   "headers": [
     {
-      "comment": "Hero media lives in public/ with stable, non-hashed filenames, so it must NOT be marked immutable: re-running scripts/build-hero.mjs reuses the same names and immutable caches would serve the old clip for a year. Astro's own _astro/* output is content-hashed and already gets long-lived caching from Vercel.",
       "source": "/hero/(.*)",
       "headers": [
         {
