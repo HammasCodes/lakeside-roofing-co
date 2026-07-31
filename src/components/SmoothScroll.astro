@@ -1,0 +1,217 @@
+---
+/**
+ * Lenis + GSAP ScrollTrigger foundation, and the site-wide scroll-reveal engine.
+ *
+ * This is a plain Astro <script>, which Astro bundles and emits as a deferred
+ * ES module. No framework island is needed anywhere on this page.
+ *
+ * Lenis 1.x drives *native* scroll (it calls window.scrollTo each frame) rather
+ * than transforming a wrapper element, so `position: sticky` and
+ * `position: fixed` keep working untouched. That is why the sticky header does
+ * not need any special handling.
+ */
+---
+
+<script>
+	/**
+	 * Everything heavy is behind a dynamic import.
+	 *
+	 * Lenis + GSAP + ScrollTrigger is ~49 KB of module that the browser must
+	 * parse and compile before it can paint, even when execution is deferred.
+	 * On a 4x-throttled mobile CPU that held the hero image off screen for
+	 * over a second after it had finished downloading. Importing it lazily
+	 * moves those bytes off the critical path entirely; this top-level script
+	 * stays under 1 KB.
+	 *
+	 * Nothing below is required for a correct first paint. The hidden state
+	 * for [data-reveal] comes from CSS (scoped to html.js in global.css), so
+	 * there is no flash of un-hidden content while the chunk loads, and every
+	 * reveal target is below the fold.
+	 */
+	type Lenis = import('lenis').default;
+
+	const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+	/**
+	 * Start the download immediately, at module scope.
+	 *
+	 * This must not be gated behind requestAnimationFrame. rAF doesn't fire
+	 * until the page paints, so putting the import inside it made fetch time
+	 * depend on paint time — the chunks landed at ~200ms on a good run and
+	 * ~2200ms on a bad one, and Speed Index swung between 1.4s and 3.9s
+	 * accordingly. Fetching here and initialising later decouples the two.
+	 */
+	const modules = Promise.all([
+		import('lenis'),
+		import('gsap'),
+		import('gsap/ScrollTrigger'),
+	]);
+
+	async function boot() {
+		const [{ default: Lenis }, { gsap }, { ScrollTrigger }] = await modules;
+
+		gsap.registerPlugin(ScrollTrigger);
+
+		let lenis: Lenis | null = null;
+		let tickerFn: ((time: number) => void) | null = null;
+
+		function startLenis() {
+			if (lenis) return;
+
+			lenis = new Lenis({
+				lerp: 0.09,
+				smoothWheel: true,
+				anchors: true,
+			});
+
+			// Drive ScrollTrigger from Lenis' scroll events, and Lenis' RAF from
+			// GSAP's ticker, so both share one clock. Two independent RAF loops
+			// would drift and cause jitter.
+			lenis.on('scroll', ScrollTrigger.update);
+
+			tickerFn = (time: number) => lenis?.raf(time * 1000);
+			gsap.ticker.add(tickerFn);
+			gsap.ticker.lagSmoothing(0);
+		}
+
+		function stopLenis() {
+			if (tickerFn) {
+				gsap.ticker.remove(tickerFn);
+				tickerFn = null;
+			}
+			gsap.ticker.lagSmoothing(500, 33);
+			lenis?.destroy();
+			lenis = null;
+		}
+
+		/**
+		 * `[data-reveal]` fades a block up. `[data-reveal-word]` rises its
+		 * pre-split word spans (split server-side in Manifesto.astro — no
+		 * SplitText dependency, and the text stays intact for crawlers and
+		 * screen readers).
+		 *
+		 * Under reduced motion we skip animation entirely and just clear the
+		 * initial hidden state, so nothing is ever left invisible.
+		 */
+		function initReveals() {
+			if (REDUCED.matches) {
+				gsap.set('[data-reveal]', { opacity: 1, y: 0, clearProps: 'all' });
+				gsap.set('[data-reveal-word] > span > span', { yPercent: 0, y: 0, clearProps: 'all' });
+				return;
+			}
+
+			document.querySelectorAll<HTMLElement>('[data-reveal-group]').forEach((group) => {
+				const items = group.querySelectorAll<HTMLElement>('[data-reveal]');
+				if (!items.length) return;
+
+				gsap.to(items, {
+					opacity: 1,
+					y: 0,
+					duration: 0.75,
+					ease: 'power2.out',
+					stagger: 0.12,
+					scrollTrigger: { trigger: group, start: 'top 80%', once: true },
+				});
+			});
+
+			// Standalone reveals (not inside a group) animate on their own.
+			document
+				.querySelectorAll<HTMLElement>('[data-reveal]:not([data-reveal-group] [data-reveal])')
+				.forEach((el) => {
+					gsap.to(el, {
+						opacity: 1,
+						y: 0,
+						duration: 0.75,
+						ease: 'power2.out',
+						scrollTrigger: { trigger: el, start: 'top 80%', once: true },
+					});
+				});
+
+			document.querySelectorAll<HTMLElement>('[data-reveal-word]').forEach((block) => {
+				// 0.12 is the brief's stagger for section groups (4-8 items). Per
+				// *word* it is far too slow: 13 words would take 1.6s to finish
+				// and the sentence reads as if it is buffering. 0.045 keeps the
+				// whole line under 0.6s while still reading as a sweep.
+				gsap.to(block.querySelectorAll(':scope > span > span'), {
+					yPercent: 0,
+					// `y: 0` is load-bearing, not redundant. The CSS pre-hide uses
+					// translateY(105%); GSAP parses that into a *pixel* translate
+					// and keeps it as a separate component from yPercent, so
+					// animating yPercent alone leaves the words parked 105% down
+					// inside the mask, permanently invisible.
+					y: 0,
+					duration: 0.85,
+					ease: 'power3.out',
+					stagger: 0.045,
+					scrollTrigger: { trigger: block, start: 'top 80%', once: true },
+				});
+			});
+		}
+
+		function setInitialRevealState() {
+			if (REDUCED.matches) return;
+			// Mirrors the CSS in global.css; GSAP animates from here to visible.
+			gsap.set('[data-reveal]', { opacity: 0, y: 28 });
+			gsap.set('[data-reveal-word] > span > span', { yPercent: 100, y: 0 });
+		}
+
+		function init() {
+			if (!REDUCED.matches) startLenis();
+			setInitialRevealState();
+			initReveals();
+
+			// Fonts change metrics, which changes element positions. Refresh so
+			// triggers aren't computed against pre-swap layout.
+			document.fonts?.ready.then(() => ScrollTrigger.refresh());
+		}
+
+		init();
+
+		// If the user flips the OS motion preference mid-session, honour it.
+		REDUCED.addEventListener('change', () => {
+			ScrollTrigger.getAll().forEach((t) => t.kill());
+			stopLenis();
+			document.documentElement.classList.toggle('reduced-motion', REDUCED.matches);
+			init();
+		});
+
+		// Cleanup for view transitions / client-side nav.
+		document.addEventListener('astro:before-swap', () => {
+			ScrollTrigger.getAll().forEach((t) => t.kill());
+			stopLenis();
+		});
+	}
+
+	/**
+	 * Initialise only once the page has actually finished painting.
+	 *
+	 * requestAnimationFrame alone is not late enough: it fires on the first
+	 * scheduled frame, which on a throttled mobile CPU is before the hero has
+	 * rasterized. Booting there put ~350ms of script plus ~300ms of style and
+	 * layout (ScrollTrigger measures every trigger it creates) directly in
+	 * front of the largest paint.
+	 *
+	 * Waiting for `load` and then for idle time moves all of it behind the
+	 * hero. Nothing here is needed for first paint: the hidden state for
+	 * [data-reveal] comes from CSS, every reveal target is below the fold, and
+	 * ScrollTrigger fires already-passed triggers immediately when it is
+	 * created, so a fast scroller still sees content appear.
+	 */
+	function schedule() {
+		const run = () =>
+			boot().catch(() => {
+				// If the animation layer can't load, drop the `js` marker so the
+				// CSS in global.css stops hiding [data-reveal] content. Failing
+				// open matters here: the alternative is a page that stays blank
+				// below the hero because a chunk 404'd.
+				document.documentElement.classList.remove('js');
+			});
+
+		const idle = window.requestIdleCallback;
+		if (typeof idle === 'function') idle(run, { timeout: 1500 });
+		else setTimeout(run, 200);
+	}
+
+	if (document.readyState === 'complete') schedule();
+	else window.addEventListener('load', schedule, { once: true });
+</script>

@@ -1,0 +1,100 @@
+---
+import { Image } from 'astro:assets';
+import BeforeAfter from './BeforeAfter.astro';
+
+import brickReroof from '../assets/projects/brick-reroof.jpg';
+import stoneTeardown from '../assets/projects/stone-teardown.jpg';
+import clayTile from '../assets/projects/clay-tile.jpg';
+import heritageTile from '../assets/projects/heritage-tile.jpg';
+import duskDelivery from '../assets/projects/dusk-delivery.jpg';
+import skylineTile from '../assets/projects/skyline-tile.jpg';
+
+/**
+ * Uniform grid: every tile is the same 4:3 box on every breakpoint, so the
+ * rows line up exactly. Photos are cropped with object-cover rather than
+ * letterboxed, and the aspect ratio is fixed on the wrapper so there is no
+ * layout shift while images decode.
+ */
+const projects = [
+	{ src: brickReroof, title: 'Brookhaven Residence', meta: 'Architectural shingle', place: 'Round Rock, TX' },
+	{ src: stoneTeardown, title: 'Limestone Ridge', meta: 'Full tear-off and redeck', place: 'Georgetown, TX' },
+	{ src: clayTile, title: 'Mission Hill', meta: 'Clay barrel tile', place: 'San Marcos, TX' },
+	{ src: heritageTile, title: 'Heritage Row', meta: 'Historic tile restoration', place: 'Austin, TX' },
+	{ src: duskDelivery, title: 'Cedar Bend', meta: 'Structural deck replacement', place: 'New Braunfels, TX' },
+	{ src: skylineTile, title: 'Skyline Terrace', meta: 'Tile repair and sealing', place: 'Austin, TX' },
+];
+---
+
+<section id="work" class="scroll-mt-28 py-28 lg:py-40">
+	<div class="mx-auto max-w-[88rem] px-6 lg:px-10">
+		<div class="flex flex-wrap items-end justify-between gap-8">
+			<div class="max-w-2xl">
+				<p class="eyebrow text-clay" data-reveal>Selected work</p>
+				<h2
+					class="mt-7 font-display text-[clamp(1.9rem,4.2vw,3.4rem)] font-normal leading-[1.06] tracking-[-0.03em] text-balance"
+					data-reveal
+				>
+					Roofs that still look right
+					{' '}<span class="text-ink/45 italic">in year fifteen.</span>
+				</h2>
+			</div>
+			<a
+				href="#contact"
+				class="link-wipe inline-block py-1 text-[0.9375rem] font-medium text-ink"
+				data-reveal
+			>
+				Start your project
+			</a>
+		</div>
+
+		<ul data-reveal-group class="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:mt-24 lg:grid-cols-3">
+			{
+				projects.map((project) => (
+					<li data-reveal>
+						<figure class="group">
+							<div class="relative aspect-[4/3] overflow-hidden rounded-xl bg-mist">
+								<Image
+									src={project.src}
+									alt={`${project.title}, ${project.meta}, ${project.place}`}
+									widths={[400, 640, 900]}
+									sizes="(min-width: 1024px) 30vw, (min-width: 640px) 48vw, 92vw"
+									loading="lazy"
+									decoding="async"
+									class="h-full w-full object-cover transition-transform duration-[900ms] ease-out-expo will-change-transform group-hover:scale-[1.05]"
+								/>
+								<div
+									class="pointer-events-none absolute inset-0 bg-ink/0 transition-colors duration-500 group-hover:bg-ink/15"
+									aria-hidden="true"
+								/>
+							</div>
+							<figcaption class="mt-5 flex items-baseline justify-between gap-4 border-t border-ink/12 pt-4">
+								<div>
+									<h3 class="font-display text-[1.125rem] tracking-tight">{project.title}</h3>
+									<p class="mt-1 text-[0.875rem] text-ink/55">{project.meta}</p>
+								</div>
+								<span class="shrink-0 text-[0.75rem] uppercase tracking-[0.12em] text-ink/40">
+									{project.place}
+								</span>
+							</figcaption>
+						</figure>
+					</li>
+				))
+			}
+		</ul>
+
+		<div class="mt-28 lg:mt-40">
+			<div class="max-w-2xl">
+				<p class="eyebrow text-clay" data-reveal>Storm restoration</p>
+				<h3
+					class="mt-7 font-display text-[clamp(1.6rem,3.2vw,2.5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-balance"
+					data-reveal
+				>
+					Drag to see the difference a full system makes.
+				</h3>
+			</div>
+			<div class="mt-12" data-reveal>
+				<BeforeAfter />
+			</div>
+		</div>
+	</div>
+</section>

@@ -1,0 +1,31 @@
+---
+import { testimonials } from '../data/site';
+---
+
+<section id="reviews" class="scroll-mt-28 border-y border-ink/10 bg-mist py-28 lg:py-40">
+	<div class="mx-auto max-w-[88rem] px-6 lg:px-10">
+		<p class="eyebrow text-clay" data-reveal>What homeowners say</p>
+
+		<div data-reveal-group class="mt-16 grid grid-cols-1 gap-14 md:grid-cols-2 md:gap-20 lg:mt-20">
+			{
+				testimonials.map((item) => (
+					<figure data-reveal class="flex flex-col">
+						<svg width="30" height="24" viewBox="0 0 30 24" fill="none" aria-hidden="true" class="text-clay/35">
+							<path
+								d="M0 24V13.2C0 5.9 4.2 1.1 12 0l1.2 4.2C8.7 5.4 6.6 8.1 6.6 12H12v12H0Zm18 0V13.2C18 5.9 22.2 1.1 30 0l1.2 4.2C26.7 5.4 24.6 8.1 24.6 12H30v12H18Z"
+								fill="currentColor"
+							/>
+						</svg>
+						<blockquote class="mt-7 font-display text-[clamp(1.25rem,2vw,1.75rem)] leading-[1.4] tracking-[-0.01em] text-pretty">
+							<p>{item.quote}</p>
+						</blockquote>
+						<figcaption class="mt-auto flex items-baseline gap-3 border-t border-ink/15 pt-6 text-[0.9375rem]">
+							<cite class="font-medium not-italic">{item.author}</cite>
+							<span class="text-ink/50">{item.detail}</span>
+						</figcaption>
+					</figure>
+				))
+			}
+		</div>
+	</div>
+</section>

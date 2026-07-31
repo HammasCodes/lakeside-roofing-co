@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Design tokens. Tailwind v4 is CSS-first: this @theme block *is* the config,
+   there is no tailwind.config.js. Every key emits matching utilities
+   (--color-ink -> bg-ink / text-ink / border-ink, etc).
+
+   Contrast (WCAG AA needs 4.5:1 for body text):
+     #191919 on #FFFFFF ....... 18.3:1
+     #FFFFFF on #191919 ....... 18.3:1
+     #A8552F on #FFFFFF ........ 6.6:1
+     #A8552F on #F4F3F3 ........ 6.1:1
+     #CE8A5F on #191919 ........ 6.2:1   (clay-light, dark surfaces only)
+
+   White over #191919 needs >= 46% opacity to clear 4.5:1.
+   text-white/60 and up is safe; /45 and below is not.
+--------------------------------------------------------------------------- */
+@theme {
+	--color-canvas: #ffffff;
+	--color-ink: #191919;
+	--color-mist: #f4f3f3;
+	--color-clay: #a8552f;
+	/* Clay on #191919 is only 3.36:1, below AA for text. This tint is the same
+	   family at 6.2:1 and is the accent to use on dark surfaces. */
+	--color-clay-light: #ce8a5f;
+
+	/* <Font> (astro:assets) writes --ff-display / --ff-sans onto :root. They
+	   are aliased, not redefined, here so Tailwind emits font-display /
+	   font-sans utilities. The names must differ or the var() self-references
+	   and resolves to the guaranteed-invalid value. */
+	--font-display: var(--ff-display), Georgia, "Times New Roman", serif;
+	--font-sans: var(--ff-sans), system-ui, -apple-system, sans-serif;
+
+	--ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+	html {
+		/* Lenis drives native scroll; native smooth would fight it. */
+		scroll-behavior: auto;
+		-webkit-text-size-adjust: 100%;
+	}
+
+	body {
+		background-color: var(--color-canvas);
+		color: var(--color-ink);
+		font-family: var(--font-sans);
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		text-rendering: optimizeLegibility;
+	}
+
+	/* Optical refinement for the display serif at large sizes. */
+	.font-display {
+		font-variation-settings: "SOFT" 0, "WONK" 0;
+		font-feature-settings: "kern" 1, "liga" 1;
+	}
+
+	/* Visible focus for keyboard users on every interactive element. Never
+	   remove without a replacement: it's a WCAG 2.4.7 failure. */
+	:focus-visible {
+		outline: 2px solid var(--color-clay);
+		outline-offset: 3px;
+		border-radius: 2px;
+	}
+
+	::selection {
+		background-color: var(--color-ink);
+		color: var(--color-canvas);
+	}
+}
+
+@layer components {
+	/* Thin rule + label used to open each section. */
+	.eyebrow {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.75rem;
+		font-size: 0.6875rem;
+		font-weight: 500;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+	}
+
+	.eyebrow::before {
+		content: "";
+		width: 1.75rem;
+		height: 1px;
+		background-color: currentColor;
+		opacity: 0.5;
+	}
+
+	/* Link that draws its underline on hover, left to right. */
+	.link-wipe {
+		position: relative;
+		display: inline-block;
+	}
+
+	.link-wipe::after {
+		content: "";
+		position: absolute;
+		left: 0;
+		bottom: -0.25rem;
+		width: 100%;
+		height: 1.5px;
+		background-color: currentColor;
+		transform: scaleX(0);
+		transform-origin: right;
+		transition: transform 0.45s var(--ease-out-expo);
+	}
+
+	.link-wipe:hover::after,
+	.link-wipe:focus-visible::after {
+		transform: scaleX(1);
+		transform-origin: left;
+	}
+}
+
+/* ---------------------------------------------------------------------------
+   Masked word reveal.
+
+   The outer span is the mask and the inner span is what moves. Both must be
+   inline-block, which drags in a subtle layout trap: an inline-block sized to
+   the parent's line-height, aligned to the bottom of the line box, still has
+   to share that line box with the parent's *strut* (the invisible box the
+   parent's own font-size/line-height reserves). The line box grows to fit
+   both, so every line ends up roughly double height and the text visually
+   drops one full line below its own container, overlapping whatever follows.
+
+   Killing the strut (line-height: 0 on the container) and restoring the real
+   line-height on the inner span makes each line box exactly as tall as the
+   word inside it. The padding-bottom keeps descenders (y, g, comma) from
+   being clipped by the mask, and the negative margin cancels it out of layout.
+--------------------------------------------------------------------------- */
+.word-mask {
+	line-height: 0;
+	/* The per-word negative margin below pulls the descender padding back out
+	   of layout so leading stays tight. That leaves the final line's descender
+	   space unaccounted for in the container's own height, so add it back here
+	   or the last line encroaches on whatever follows. */
+	padding-bottom: 0.16em;
+}
+
+.word-mask > span {
+	display: inline-block;
+	overflow: hidden;
+	vertical-align: bottom;
+	padding-bottom: 0.16em;
+	margin-bottom: -0.16em;
+}
+
+.word-mask > span > span {
+	display: inline-block;
+	line-height: 1.08;
+}
+
+/* ---------------------------------------------------------------------------
+   Scroll-reveal initial state.
+
+   Scoped to `html.js`: the `.js` class is set by a tiny inline script in
+   <head>. If JS never runs (crawler without JS, script error, CSP block) the
+   hidden state is never applied and all content renders normally. Setting
+   `opacity: 0` in unconditional CSS would render the page blank to a non-JS
+   crawler, which is an SEO failure, not just a cosmetic one.
+--------------------------------------------------------------------------- */
+html.js [data-reveal] {
+	opacity: 0;
+	will-change: transform, opacity;
+}
+
+html.js [data-reveal-word] > span > span {
+	transform: translateY(105%);
+}
+
+/* Users who ask for reduced motion get the final state immediately. */
+html.reduced-motion [data-reveal],
+html.reduced-motion [data-reveal-word] > span > span {
+	opacity: 1 !important;
+	transform: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html.js [data-reveal],
+	html.js [data-reveal-word] > span > span {
+		opacity: 1 !important;
+		transform: none !important;
+	}
+
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}

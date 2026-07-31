@@ -1,0 +1,86 @@
+---
+import { site, nav } from '../data/site';
+---
+
+{/*
+	Sentinel sits at the very top of the document. An IntersectionObserver on it
+	tells us whether the page is scrolled, without a scroll listener: no
+	per-frame main thread work, and it settles before the animation bundle
+	loads. `data-at-top` on the header drives every colour change below.
+*/}
+<div data-scroll-sentinel aria-hidden="true" class="absolute top-0 h-px w-full"></div>
+
+{/*
+	backdrop-blur is applied only in the scrolled (solid) state. While the header
+	sits transparent over the hero there is nothing to frost, but the browser
+	still has to blur the photograph behind a full-width bar every frame, which
+	is expensive wherever compositing falls back to software.
+*/}
+<header
+	data-site-header
+	data-at-top
+	class="group fixed inset-x-0 top-0 z-50 transition-[background-color,border-color] duration-500 data-[at-top]:border-transparent data-[at-top]:bg-transparent data-[at-top]:backdrop-blur-none border-b border-ink/10 bg-canvas/80 backdrop-blur-xl"
+>
+	<nav
+		aria-label="Primary"
+		class="mx-auto flex max-w-[88rem] items-center justify-between px-6 transition-[padding] duration-500 group-data-[at-top]:py-7 py-4 lg:px-10"
+	>
+		<a
+			href="/"
+			aria-label={`${site.name} home`}
+			class="flex items-center gap-2.5 text-ink transition-colors duration-500 group-data-[at-top]:text-white"
+		>
+			<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+				<path d="M2 12 12 3l10 9" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" />
+				<path d="M5 10.5V21h14V10.5" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" />
+			</svg>
+			<span class="font-display text-[1.0625rem] tracking-tight">{site.name}</span>
+		</a>
+
+		<ul class="hidden items-center gap-10 md:flex">
+			{
+				nav.map((item) => (
+					<li>
+						<a
+							href={item.href}
+							class="link-wipe text-[0.875rem] text-ink/70 transition-colors duration-500 hover:text-ink group-data-[at-top]:text-white/80 group-data-[at-top]:hover:text-white"
+						>
+							{item.label}
+						</a>
+					</li>
+				))
+			}
+		</ul>
+
+		<div class="flex items-center gap-5">
+			<a
+				href={`tel:${site.phone}`}
+				class="link-wipe hidden text-[0.875rem] font-medium text-ink transition-colors duration-500 group-data-[at-top]:text-white sm:block"
+			>
+				{site.phoneDisplay}
+			</a>
+			<a
+				href="#contact"
+				class="rounded-full px-5 py-2.5 text-[0.875rem] font-medium transition-all duration-500 bg-ink text-white hover:bg-clay group-data-[at-top]:bg-white group-data-[at-top]:text-ink group-data-[at-top]:hover:bg-clay group-data-[at-top]:hover:text-white"
+			>
+				Book Inspection
+			</a>
+		</div>
+	</nav>
+</header>
+
+<script>
+	const header = document.querySelector<HTMLElement>('[data-site-header]');
+	const sentinel = document.querySelector('[data-scroll-sentinel]');
+
+	if (header && sentinel) {
+		// Sentinel visible => we're at the top => transparent header over the hero.
+		new IntersectionObserver(
+			([entry]) => {
+				if (entry.isIntersecting) header.setAttribute('data-at-top', '');
+				else header.removeAttribute('data-at-top');
+			},
+			{ threshold: 0 },
+		).observe(sentinel);
+	}
+</script>

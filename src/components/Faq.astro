@@ -1,0 +1,56 @@
+---
+import { faqs, site } from '../data/site';
+
+/**
+ * Native <details>/<summary>: zero JavaScript, keyboard operable and screen
+ * reader announced for free, and it works with JS disabled.
+ *
+ * This same `faqs` array is serialised into FAQPage JSON-LD in Layout.astro,
+ * so the structured data can never drift from what is rendered.
+ */
+---
+
+<section id="faq" class="scroll-mt-28 py-28 lg:py-40">
+	<div class="mx-auto grid max-w-[88rem] grid-cols-1 gap-14 px-6 lg:grid-cols-12 lg:gap-20 lg:px-10">
+		<div class="lg:col-span-5">
+			<p class="eyebrow text-clay" data-reveal>Common questions</p>
+			<h2
+				class="mt-7 font-display text-[clamp(1.9rem,4.2vw,3.4rem)] font-normal leading-[1.06] tracking-[-0.03em] text-balance"
+				data-reveal
+			>
+				Straight answers,
+				{' '}<span class="text-ink/45 italic">before you call.</span>
+			</h2>
+			<p class="mt-8 text-[1.0625rem] leading-relaxed text-ink/60 text-pretty" data-reveal>
+				Still unsure about something? Call{' '}
+				<a href={`tel:${site.phone}`} class="link-wipe font-medium text-ink">{site.phoneDisplay}</a>{' '}
+				and speak to an estimator, not a call centre.
+			</p>
+		</div>
+
+		<div data-reveal-group class="lg:col-span-6 lg:col-start-7">
+			{
+				faqs.map((faq) => (
+					<details data-reveal class="group border-b border-ink/15 first:border-t">
+						<summary class="flex cursor-pointer list-none items-start justify-between gap-8 py-7 text-left [&::-webkit-details-marker]:hidden">
+							<h3 class="text-[1.0625rem] font-medium leading-snug tracking-tight transition-colors duration-300 group-hover:text-clay">
+								{faq.question}
+							</h3>
+							<span
+								class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-ink/20 transition-all duration-300 group-hover:border-clay group-hover:text-clay group-open:rotate-45"
+								aria-hidden="true"
+							>
+								<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+									<path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+								</svg>
+							</span>
+						</summary>
+						<p class="pb-8 pr-10 text-[0.9375rem] leading-relaxed text-ink/65 text-pretty">
+							{faq.answer}
+						</p>
+					</details>
+				))
+			}
+		</div>
+	</div>
+</section>

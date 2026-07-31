@@ -1,0 +1,74 @@
+---
+import BoomerangVideoBg from './BoomerangVideoBg.astro';
+import { site } from '../data/site';
+
+const trust = ['Lifetime workmanship warranty', 'Insurance claims handled', 'Licensed & insured in Texas'];
+---
+
+<section class="relative isolate flex min-h-[100svh] flex-col justify-end overflow-hidden">
+	<BoomerangVideoBg />
+
+	{/*
+		Nothing above the fold uses data-reveal. Those elements would sit at
+		opacity: 0 until the GSAP bundle parses, which on a throttled mobile CPU
+		is a large Speed Index penalty for content already in view. The hero is
+		static; reveals start below the fold.
+	*/}
+	<div class="relative z-10 mx-auto w-full max-w-[88rem] px-6 pb-16 pt-40 lg:px-10 lg:pb-24">
+		<p class="eyebrow text-white/70">Central Texas since {site.founded}</p>
+
+		{/*
+			The h1 max-width is in rem, not ch, on purpose. `ch` resolves to the
+			width of the font's "0" glyph, so it measures differently in the
+			fallback than in Fraunces. The h1 would then wrap at a different point
+			once the webfont swapped, changing the block's height, and because this
+			hero is bottom-anchored the whole thing jumped: 0.067 CLS on its own.
+		*/}
+		<h1
+			class="mt-7 max-w-[52rem] font-display text-[clamp(2.75rem,8vw,6.5rem)] font-normal leading-[0.98] tracking-[-0.03em] text-white"
+		>
+			Protecting your home.
+			{/* Explicit space: the span is display:block so it looks right either
+			    way, but without this the h1's text content reads "home.Built",
+			    which is what crawlers and screen readers actually consume. */}
+			{' '}<span class="block text-white/70 italic">Built to last.</span>
+		</h1>
+
+		<div class="mt-12 flex flex-col gap-10 border-t border-white/20 pt-10 lg:flex-row lg:items-end lg:justify-between">
+			<p class="max-w-md text-[1.0625rem] leading-relaxed text-white/80 text-pretty">
+				{site.tagline}
+			</p>
+
+			<div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+				<a
+					href="#contact"
+					class="group/cta inline-flex items-center justify-center gap-2.5 rounded-full bg-white px-8 py-4 text-[0.9375rem] font-medium text-ink transition-colors duration-300 hover:bg-clay hover:text-white"
+				>
+					Book Free Inspection
+					<svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true" class="transition-transform duration-300 group-hover/cta:translate-x-1">
+						<path d="M2 8h12M9 3l5 5-5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+					</svg>
+				</a>
+				<a
+					href="#work"
+					class="inline-flex items-center justify-center rounded-full border border-white/30 px-8 py-4 text-[0.9375rem] font-medium text-white transition-colors duration-300 hover:border-white/70 hover:bg-white/10"
+				>
+					See our work
+				</a>
+			</div>
+		</div>
+
+		<ul class="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3">
+			{
+				trust.map((item) => (
+					<li class="flex items-center gap-2 text-[0.8125rem] text-white/65">
+						<svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true" class="text-clay-light">
+							<path d="M13.5 4.5 6 12 2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+						{item}
+					</li>
+				))
+			}
+		</ul>
+	</div>
+</section>

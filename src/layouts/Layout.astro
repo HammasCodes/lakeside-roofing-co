@@ -1,23 +1,147 @@
+---
+import { Font } from 'astro:assets';
+import { site, faqs } from '../data/site';
+import SmoothScroll from '../components/SmoothScroll.astro';
+import '../styles/global.css';
+
+interface Props {
+	title?: string;
+	description?: string;
+	/** Path to the OG image, relative to the site root. */
+	ogImage?: string;
+}
+
+const {
+	title = site.seoTitle,
+	description = site.description,
+	ogImage = '/og.jpg',
+} = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const ogImageUrl = new URL(ogImage, Astro.site).href;
+
+const { address, geo } = site;
+
+const localBusinessSchema = {
+	'@context': 'https://schema.org',
+	'@type': 'RoofingContractor',
+	'@id': `${Astro.site}#business`,
+	name: site.name,
+	legalName: site.legalName,
+	description: site.description,
+	url: Astro.site?.href,
+	telephone: site.phone,
+	email: site.email,
+	image: ogImageUrl,
+	priceRange: site.priceRange,
+	address: {
+		'@type': 'PostalAddress',
+		streetAddress: address.street,
+		addressLocality: address.city,
+		addressRegion: address.region,
+		postalCode: address.postalCode,
+		addressCountry: address.country,
+	},
+	geo: {
+		'@type': 'GeoCoordinates',
+		latitude: geo.latitude,
+		longitude: geo.longitude,
+	},
+	areaServed: site.areaServed.map((name) => ({
+		'@type': 'City',
+		name,
+	})),
+	openingHoursSpecification: site.openingHours.map((slot) => ({
+		'@type': 'OpeningHoursSpecification',
+		dayOfWeek: slot.days,
+		opens: slot.opens,
+		closes: slot.closes,
+	})),
+	// NOTE: aggregateRating is intentionally omitted. Publishing review counts
+	// that aren't backed by real, collected reviews violates Google's
+	// structured data policy and risks a manual action. Add it only when
+	// wired to a genuine review source.
+};
+
+const faqSchema = {
+	'@context': 'https://schema.org',
+	'@type': 'FAQPage',
+	mainEntity: faqs.map((faq) => ({
+		'@type': 'Question',
+		name: faq.question,
+		acceptedAnswer: {
+			'@type': 'Answer',
+			text: faq.answer,
+		},
+	})),
+};
+---
+
 <!doctype html>
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={canonical} />
+
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" sizes="32x32" />
+		<meta name="theme-color" content="#191919" />
+
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content={site.name} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonical} />
+		<meta property="og:image" content={ogImageUrl} />
+		<meta property="og:locale" content="en_US" />
+
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={ogImageUrl} />
+
+		<Font cssVariable="--ff-display" preload />
+		<Font cssVariable="--ff-sans" preload />
+
+		{/*
+			Sets `.js` before first paint so the reveal system's `opacity: 0`
+			rules can be scoped to JS-capable clients only. Without this, a
+			crawler or a client whose bundle failed would see a blank page.
+			Inline and blocking on purpose — deferring it causes a flash.
+		*/}
+		<script is:inline>
+			(function () {
+				var el = document.documentElement;
+				el.classList.add('js');
+				if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+					el.classList.add('reduced-motion');
+				}
+			})();
+		</script>
+
+		<script
+			type="application/ld+json"
+			is:inline
+			set:html={JSON.stringify(localBusinessSchema)}
+		/>
+		<script type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
 	</head>
+
 	<body>
+		<a
+			href="#main"
+			class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-ink focus:px-5 focus:py-3 focus:text-sm focus:font-medium focus:text-white"
+		>
+			Skip to content
+		</a>
+
 		<slot />
+
+		<SmoothScroll />
 	</body>
 </html>
-
-<style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
-</style>

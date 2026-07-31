@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lakeside-roofing-co.vercel.app/sitemap-index.xml

@@ -1,0 +1,150 @@
+---
+import { Picture } from 'astro:assets';
+import poster from '../assets/hero-poster.jpg';
+
+/**
+ * Full-bleed hero background.
+ *
+ * The boomerang is baked into the file itself: scripts/build-hero.mjs concats
+ * the clip with a reversed copy (minus the duplicated turnaround frames), so a
+ * plain `loop` attribute ping-pongs seamlessly. No canvas, no frame capture, no
+ * per-frame memory — the effect costs zero JavaScript at runtime.
+ *
+ * Loading strategy: `preload="none"` and no `autoplay`, so the 565 KB video
+ * never competes with the critical path. The poster is a real <Image>, which
+ * gives proper AVIF/WebP negotiation (the `poster` attribute takes a single URL
+ * and can't negotiate). The video fades in over it once it can actually play.
+ */
+---
+
+<div class="absolute inset-0 z-0 overflow-hidden">
+	{/*
+		The 1.15 origin-top scale is the framing crop. It is scoped to >=768px:
+		on a phone it buys almost nothing visually (the crop is already tight)
+		while forcing the compositor to rasterize a layer 15% larger than the
+		viewport, which is real work on a throttled mobile CPU.
+	*/}
+	<div class="h-full w-full origin-top overflow-hidden md:scale-[1.15]">
+		{/*
+			<Picture>, not <Image>: only Picture emits multiple <source> formats.
+			AVIF lands roughly half the size of the WebP fallback, and this is
+			the one image on the critical path.
+
+			`sizes` under-declares the width on phones deliberately. The poster
+			is a decorative backdrop behind a 45% scrim with copy over it, so a
+			~1.5x-density source is indistinguishable from a 2.6x one, and it
+			takes 16 KB off the critical path, the largest single LCP cost on
+			mobile. Quality is dialled down for the same reason.
+
+			The poster is decorative, so it carries alt="" AND aria-hidden on the
+			<picture>. Both are needed: Astro compresses the emitted HTML and
+			drops empty attributes, so alt="" vanishes from the build output and
+			a screen reader would otherwise announce the hashed filename. Hiding
+			the wrapper takes the whole backdrop out of the accessibility tree.
+		*/}
+		<Picture
+			src={poster}
+			alt=""
+			widths={[480, 640, 960, 1280, 1600]}
+			sizes="(max-width: 767px) 55vw, 100vw"
+			formats={['avif', 'webp']}
+			quality={38}
+			loading="eager"
+			fetchpriority="high"
+			pictureAttributes={{ class: 'absolute inset-0 h-full w-full', 'aria-hidden': 'true' }}
+			class="h-full w-full object-cover"
+		/>
+
+		<video
+			data-hero-video
+			muted
+			playsinline
+			loop
+			preload="none"
+			aria-hidden="true"
+			tabindex="-1"
+			class="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-700"
+		>
+			<source src="/hero/boomerang-960.webm" type="video/webm" />
+			<source src="/hero/boomerang-960.mp4" type="video/mp4" />
+		</video>
+	</div>
+
+	{/*
+		Scrim. Copy is bottom-aligned in the hero and the nav sits transparent
+		over the top, so both ends need coverage.
+
+		Deliberately ONE layer, not a flat tint plus a gradient on top. Each
+		full-viewport translucent layer is another full-screen alpha blend for
+		the compositor, which is measurable wherever rasterization falls back to
+		software. The stops below already bake in the base tint: nothing in the
+		hero drops under a 0.55 ink overlay, which is what the white copy needs
+		to clear WCAG AA against the brightest frame of the video.
+	*/}
+	<div class="absolute inset-0 bg-gradient-to-b from-ink/75 via-ink/55 to-ink/85"></div>
+</div>
+
+<script>
+	const video = document.querySelector<HTMLVideoElement>('[data-hero-video]');
+
+	if (video) {
+		const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+		const roomy = window.matchMedia('(min-width: 768px)');
+
+		/**
+		 * Whether it's appropriate to fetch and play the background video.
+		 *
+		 * On phones the answer is no. The clip is 552 KB of decorative motion
+		 * that sits behind a 45% scrim and the hero copy — it costs cellular
+		 * data and battery to deliver something largely hidden. The poster
+		 * already carries the composition, so small screens keep the still.
+		 *
+		 * Save-Data and reduced-motion are honoured on every screen size.
+		 */
+		const shouldPlay = () => {
+			if (reduced.matches) return false;
+			if (!roomy.matches) return false;
+			const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+			if (conn?.saveData) return false;
+			return true;
+		};
+
+		const start = () => {
+			if (!shouldPlay()) return;
+
+			video.addEventListener(
+				'canplay',
+				() => {
+					video.classList.remove('opacity-0');
+					video.play().catch(() => {
+						/* Autoplay blocked — the poster is already correct. */
+					});
+				},
+				{ once: true },
+			);
+
+			video.load();
+		};
+
+		// Defer the fetch until the browser is idle so LCP is settled first.
+		// (Read off the object rather than using `'x' in window`, which narrows
+		// the else branch to `never` under strict mode.)
+		const idle = window.requestIdleCallback;
+		if (typeof idle === 'function') {
+			idle(start, { timeout: 2500 });
+		} else {
+			window.addEventListener('load', start, { once: true });
+		}
+
+		// Don't burn battery/decode cycles while the tab is hidden.
+		document.addEventListener('visibilitychange', () => {
+			if (document.hidden) video.pause();
+			else if (shouldPlay() && video.readyState >= 3) video.play().catch(() => {});
+		});
+
+		// Rotating a tablet into a wide layout should start the video.
+		roomy.addEventListener('change', () => {
+			if (shouldPlay() && video.readyState === 0) start();
+		});
+	}
+</script>

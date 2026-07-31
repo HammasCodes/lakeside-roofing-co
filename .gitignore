@@ -22,3 +22,19 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Hero source footage (19.7 MB) — derivatives in public/hero/ are committed instead
+public/hero-roofer.mp4
+.work/
+
+# Original full-res photography (21 MB) — normalised copies live in src/assets/projects/
+.originals/
+
+.vercel
+.env*
+
+# Agent skill packages: 3.6 MB of vendored third-party data, and .claude/skills
+# are symlinks to absolute local paths that would be broken in CI.
+# Reinstall with `npx skills add` — skills-lock.json (committed) pins them.
+.agents/skills/
+.claude/skills/
